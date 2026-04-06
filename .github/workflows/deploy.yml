@@ -1,0 +1,48 @@
+name: Tag Release Image
+
+on:
+  release:
+    types: [published]
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE_ARN: arn:aws:iam::982563744386:role/medlit-github-deploy
+  ECR_REPOSITORY: medlit-prod
+
+jobs:
+  tag-release:
+    name: Re-tag ECR image with release version
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Re-tag latest image with release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Copy the :latest manifest to :<release-tag> so the infra repo
+          # can deploy a stable, human-readable version from ECR.
+          MANIFEST=$(aws ecr batch-get-image \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag=latest \
+            --query 'images[0].imageManifest' \
+            --output text)
+
+          aws ecr put-image \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-tag "$RELEASE_TAG" \
+            --image-manifest "$MANIFEST"
+
+          echo "Tagged $ECR_REPOSITORY:latest → :$RELEASE_TAG"

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    env:
+      # Prevent scheduler from spawning background threads during tests
+      SCHEDULER_ENABLED: "false"
+      # Satisfy config validation — all LLM calls are mocked in tests
+      GEMINI_API_KEY: "fake-key-for-tests"
+      DATABASE_URL: "postgresql+asyncpg://medlit:medlit@localhost:5432/medlit"
+      REDIS_URL: "redis://localhost:6379/0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install CPU-only torch
+        run: uv pip install --system torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Run tests
+        run: pytest --tb=short -q
