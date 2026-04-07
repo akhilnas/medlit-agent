@@ -24,6 +24,7 @@ dependencies = [
     "aiosmtplib>=3.0.0",
     "structlog>=24.0.0",
     "prometheus-client>=0.20.0",
+    "streamlit>=1.56.0",
 ]
 
 [project.optional-dependencies]
