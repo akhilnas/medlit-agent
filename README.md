@@ -204,15 +204,16 @@ Configure these repository secrets:
 | Secret | Description |
 |---|---|
 | `AWS_DEPLOY_ROLE_ARN` | IAM role ARN for OIDC authentication |
-| `ECR_REPOSITORY` | ECR repository name |
+| `ECR_REPOSITORY` | ECR repository name for the API image |
+| `ECR_DASHBOARD_REPOSITORY` | ECR repository name for the dashboard image |
 | `ECS_TASK_FAMILY` | ECS task definition family name |
 | `ECS_SERVICE_NAME` | ECS service name |
 | `ECS_CLUSTER_NAME` | ECS cluster name |
 
 Workflows:
-- **ci.yml** — runs lint + tests on every PR
-- **build.yml** — builds and pushes Docker image to ECR on merge to `main`
-- **deploy.yml** — deploys to ECS on GitHub release publication
+- **ci.yml** — lint + tests on every PR
+- **build.yml** — builds and pushes **both** API (`Dockerfile`) and dashboard (`dashboard/Dockerfile`) images to ECR on merge to `main`
+- **deploy.yml** — re-tags ECR image with release version on GitHub release publication
 
 ## Environment Variables
 
