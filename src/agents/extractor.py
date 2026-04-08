@@ -177,5 +177,8 @@ class ExtractionAgent:
         return "extracted"
 
     async def _mark_failed(self, article: Article, reason: str) -> None:
+        # A failed flush leaves the session in a rolled-back state; reset it
+        # before attempting a new transaction.
+        await self._db.rollback()
         article.processing_status = "failed"
         await self._db.commit()
