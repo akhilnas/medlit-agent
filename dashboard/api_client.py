@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 
 _BASE_URL = os.environ.get("MEDLIT_API_URL", "http://localhost:8000")
+_API_KEY = os.environ.get("API_KEY", "")
 _TIMEOUT = 30.0
 _PIPELINE_TIMEOUT = 600.0  # full pipeline can take several minutes
 
@@ -23,7 +24,8 @@ class MedlitAPIClient:
     """Thin wrapper around the MedLit FastAPI backend."""
 
     def __init__(self, base_url: str = _BASE_URL) -> None:
-        self._client = httpx.Client(base_url=base_url, timeout=_TIMEOUT)
+        headers = {"X-API-Key": _API_KEY} if _API_KEY else {}
+        self._client = httpx.Client(base_url=base_url, timeout=_TIMEOUT, headers=headers)
 
     def close(self) -> None:
         self._client.close()

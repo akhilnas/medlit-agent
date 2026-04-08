@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     embedding_model_name: str = "NeuML/pubmedbert-base-embeddings"
 
+    # API authentication (set to enable; leave unset for local dev)
+    api_key: str | None = None
+
     # Scheduler
     scheduler_enabled: bool = True
 
