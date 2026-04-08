@@ -1,4 +1,4 @@
-name: Build & Push
+name: Build & Push & Deploy
 
 on:
   push:
@@ -8,10 +8,11 @@ env:
   AWS_REGION: us-east-1
   AWS_ROLE_ARN: arn:aws:iam::982563744386:role/medlit-github-deploy
   ECR_REGISTRY: 982563744386.dkr.ecr.us-east-1.amazonaws.com
+  ECS_CLUSTER: medlit-prod
 
 jobs:
   build-api:
-    name: Build API image and push to ECR
+    name: Build and deploy API
     runs-on: ubuntu-latest
 
     permissions:
@@ -54,8 +55,16 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
+      - name: Deploy API to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service medlit-prod \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
   build-dashboard:
-    name: Build dashboard image and push to ECR
+    name: Build and deploy dashboard
     runs-on: ubuntu-latest
 
     permissions:
@@ -96,3 +105,11 @@ jobs:
             ${{ env.ECR_REGISTRY }}/medlit-prod-dashboard:${{ steps.tags.outputs.short_sha }}
           cache-from: type=gha,scope=dashboard
           cache-to: type=gha,mode=max,scope=dashboard
+
+      - name: Deploy dashboard to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service medlit-prod-dashboard \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
