@@ -51,10 +51,10 @@ with col_q:
     if not queries:
         st.info("No active queries. Create one on the Queries page.")
     for q in queries:
-        name    = _html.escape(q.get("name", ""))
-        desc    = _html.escape(q.get("description", ""))
-        pq      = _html.escape(q.get("pubmed_query", ""))
-        cron    = _html.escape(q.get("schedule_cron", "0 6 * * *"))
+        name    = _html.escape(q.get("name") or "")
+        desc    = _html.escape(q.get("description") or "")
+        pq      = _html.escape(q.get("pubmed_query") or "")
+        cron    = _html.escape(q.get("schedule_cron") or "0 6 * * *")
         desc_el = (
             f'<div style="font-family:var(--font-body);font-size:0.9rem;'
             f'color:var(--text-dim);font-style:italic;margin-bottom:0.55rem;">{desc}</div>'
@@ -112,7 +112,7 @@ with col_s:
         grade     = s.get("evidence_grade", "")
         consensus = s.get("consensus_status", "")
         icon      = _consensus_icon(consensus)
-        summary   = _html.escape(s.get("summary_text", ""))
+        summary   = _html.escape(s.get("summary_text") or "")
         summary_trunc = (summary[:300] + "…") if len(summary) > 300 else summary
         st.markdown(
             f"""

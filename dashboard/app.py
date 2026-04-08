@@ -114,11 +114,11 @@ st.markdown(
 )
 
 col1, col2, col3 = st.columns(3)
-col1.page_link("pages/1_Home.py",       label="Home — Queries & Syntheses", icon="◈")
-col2.page_link("pages/2_Queries.py",    label="Clinical Queries",           icon="◈")
-col3.page_link("pages/3_Articles.py",   label="Article Explorer",           icon="◈")
+col1.page_link("pages/1_Home.py",       label="Home — Queries & Syntheses")
+col2.page_link("pages/2_Queries.py",    label="Clinical Queries")
+col3.page_link("pages/3_Articles.py",   label="Article Explorer")
 
 col4, col5, col6 = st.columns(3)
-col4.page_link("pages/4_Search.py",     label="Semantic Search",            icon="◈")
-col5.page_link("pages/5_Syntheses.py",  label="Evidence Syntheses",         icon="◈")
-col6.page_link("pages/6_Pipeline.py",   label="Pipeline Status",            icon="◈")
+col4.page_link("pages/4_Search.py",     label="Semantic Search")
+col5.page_link("pages/5_Syntheses.py",  label="Evidence Syntheses")
+col6.page_link("pages/6_Pipeline.py",   label="Pipeline Status")

@@ -81,7 +81,7 @@ else:
             col_info, col_actions = st.columns([3, 1])
 
             with col_info:
-                name_esc = _html.escape(q.get("name", ""))
+                name_esc = _html.escape(q.get("name") or "")
                 st.markdown(
                     f"""
                     <div style="margin-bottom:0.5rem;">
@@ -100,7 +100,7 @@ else:
                 if q.get("description"):
                     st.caption(q["description"])
                 st.code(q["pubmed_query"], language=None)
-                cron_esc = _html.escape(q.get("schedule_cron", "0 6 * * *"))
+                cron_esc = _html.escape(q.get("schedule_cron") or "0 6 * * *")
                 st.markdown(
                     f'<div style="font-family:var(--font-mono);font-size:0.62rem;'
                     f'letter-spacing:0.10em;color:var(--text-faint);margin-top:0.2rem;">'
