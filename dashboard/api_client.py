@@ -16,6 +16,7 @@ import httpx
 
 _BASE_URL = os.environ.get("MEDLIT_API_URL", "http://localhost:8000")
 _TIMEOUT = 30.0
+_PIPELINE_TIMEOUT = 600.0  # full pipeline can take several minutes
 
 
 class MedlitAPIClient:
@@ -114,7 +115,7 @@ class MedlitAPIClient:
         )
 
     def run_full_pipeline(self, query_id: str) -> dict:
-        return self._post("/v1/pipeline/run", json={"query_id": query_id})
+        return self._post("/v1/pipeline/run", json={"query_id": query_id}, timeout=_PIPELINE_TIMEOUT)
 
     def list_pipeline_runs(
         self,
@@ -135,8 +136,8 @@ class MedlitAPIClient:
         r.raise_for_status()
         return r.json()
 
-    def _post(self, path: str, json: dict | None = None) -> Any:
-        r = self._client.post(path, json=json)
+    def _post(self, path: str, json: dict | None = None, timeout: float | None = None) -> Any:
+        r = self._client.post(path, json=json, timeout=timeout or _TIMEOUT)
         r.raise_for_status()
         return r.json()
 
