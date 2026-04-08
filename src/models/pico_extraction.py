@@ -26,7 +26,7 @@ class PicoExtraction(Base):
     sample_size: Mapped[int | None] = mapped_column(Integer)
     effect_size: Mapped[str | None] = mapped_column(Text)
     confidence_interval: Mapped[str | None] = mapped_column(Text)
-    p_value: Mapped[str | None] = mapped_column(String(50))
+    p_value: Mapped[str | None] = mapped_column(Text)
     evidence_level: Mapped[str | None] = mapped_column(String(50))
     extraction_model: Mapped[str | None] = mapped_column(String(100))
     extraction_confidence: Mapped[float | None] = mapped_column(Float)
