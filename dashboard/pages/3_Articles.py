@@ -4,8 +4,10 @@ import streamlit as st
 
 st.set_page_config(page_title="Articles — MedLit Agent", layout="wide")
 
+from dashboard.auth import require_login  # noqa: E402
 from dashboard.theme import apply_theme, status_badge, pico_grid  # noqa: E402
 
+require_login()
 apply_theme()
 
 

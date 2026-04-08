@@ -16,8 +16,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+from dashboard.auth import require_login  # noqa: E402
 from dashboard.theme import apply_theme  # noqa: E402
 
+require_login()
 apply_theme()
 
 # ── Sidebar branding ─────────────────────────────────────────────────────────

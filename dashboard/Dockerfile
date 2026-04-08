@@ -6,6 +6,9 @@ RUN pip install --no-cache-dir streamlit>=1.32.0 httpx>=0.27.0 plotly>=5.0.0
 
 COPY dashboard/ ./dashboard/
 
+# DASHBOARD_PASSWORD is injected at runtime via ECS secrets/env — no default here
+ENV DASHBOARD_PASSWORD=""
+
 EXPOSE 8501
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
