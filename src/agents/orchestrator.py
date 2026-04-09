@@ -101,7 +101,7 @@ class Orchestrator:
             articles_processed_total.labels(status="found").inc(pipeline_run.articles_found)
             pipeline_run_id = pipeline_run.id
         except Exception as exc:
-            logger.error("Monitor agent failed for query %s: %s", query.id, exc)
+            logger.error("Monitor agent failed for query %s: %s", qid, exc)
             return state.transition("FAILED", error=str(exc))
 
         # 2 — EXTRACTING
@@ -115,7 +115,7 @@ class Orchestrator:
             articles_processed_total.labels(status="extracted").inc(extracted)
             articles_processed_total.labels(status="failed").inc(failed)
         except Exception as exc:
-            logger.error("Extractor agent failed for query %s: %s", query.id, exc)
+            logger.error("Extractor agent failed for query %s: %s", qid, exc)
             state = state.transition("EXTRACTING", articles_extracted=0)
 
         # 3 — EMBEDDING
@@ -127,12 +127,13 @@ class Orchestrator:
             state = state.transition("EMBEDDING", articles_embedded=embedded)
             articles_processed_total.labels(status="embedded").inc(embedded)
         except Exception as exc:
-            logger.warning("Embedder agent failed for query %s: %s", query.id, exc)
+            logger.warning("Embedder agent failed for query %s: %s", qid, exc)
             state = state.transition("EMBEDDING", articles_embedded=0)
 
         # 4 — SYNTHESIZING
         state = state.transition("SYNTHESIZING")
         try:
+            await self._db.refresh(query)
             with pipeline_duration_seconds.labels(phase="synthesize", query_id=qid).time():
                 synthesis = await self._synthesizer.run(
                     query, pipeline_run_id=pipeline_run_id
@@ -140,7 +141,7 @@ class Orchestrator:
             synthesis_id = synthesis.id if synthesis is not None else None
             state = state.transition("SYNTHESIZING", synthesis_id=synthesis_id)
         except Exception as exc:
-            logger.error("Synthesis agent failed for query %s: %s", query.id, exc)
+            logger.error("Synthesis agent failed for query %s: %s", qid, exc)
             state = state.transition("SYNTHESIZING", synthesis_id=None)
 
         return state.transition("COMPLETE")
