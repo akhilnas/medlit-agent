@@ -151,7 +151,7 @@ class SynthesisAgent:
         payload, usage = await self._llm.complete_json(
             system=SynthesisPromptTemplate.system(),
             user=user_prompt,
-            max_tokens=2048,
+            max_tokens=8192,
             temperature=0.0,
         )
         logger.debug(
