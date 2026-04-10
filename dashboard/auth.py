@@ -83,4 +83,22 @@ def _render_login_form(correct_password: str) -> None:
         else:
             st.error("Incorrect password.")
 
+    st.markdown(
+        """
+        <div style="
+          text-align: center;
+          margin-top: 1.5rem;
+          font-size: 0.8rem;
+          color: var(--muted, #888);
+          font-family: sans-serif;
+        ">
+          For access, contact
+          <a href="mailto:eakhil.n@gmail.com" style="color: var(--accent, #888); text-decoration: none;">
+            eakhil.n@gmail.com
+          </a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.stop()
