@@ -4,9 +4,8 @@ The DB session and PubMedClient are both injected mocks so no real database
 or network calls are made.
 """
 
-import uuid
 from datetime import date
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 

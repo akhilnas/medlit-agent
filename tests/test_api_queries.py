@@ -1,11 +1,8 @@
 """Tests for GET/POST/PATCH/DELETE /v1/queries endpoints."""
 
 import uuid
-from unittest.mock import AsyncMock
 
-import pytest
-
-from tests.conftest import FIXED_TIME, make_clinical_query, rows_result, scalar_result
+from tests.conftest import rows_result, scalar_result
 
 
 # ---------------------------------------------------------------------------

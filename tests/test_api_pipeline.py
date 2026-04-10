@@ -1,10 +1,7 @@
 """Tests for POST /v1/pipeline/trigger."""
 
 import uuid
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 from tests.conftest import FIXED_TIME, make_clinical_query
 

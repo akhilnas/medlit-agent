@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import prometheus_client
-import pytest
+from unittest.mock import AsyncMock, MagicMock
 
 from src.core.metrics import (
     api_request_latency_seconds,

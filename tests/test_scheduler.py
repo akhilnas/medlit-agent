@@ -5,8 +5,6 @@ from __future__ import annotations
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from src.services.scheduler import PipelineScheduler
 
 
@@ -30,7 +28,7 @@ def make_query(cron: str = "0 6 * * 1", is_active: bool = True):
 
 def test_scheduler_not_started_on_init():
     with patch("src.services.scheduler.AsyncIOScheduler") as MockScheduler:
-        sched = PipelineScheduler(db_factory=AsyncMock())
+        PipelineScheduler(db_factory=AsyncMock())
         MockScheduler.return_value.start.assert_not_called()
 
 

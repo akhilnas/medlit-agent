@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date
 from unittest.mock import MagicMock
 
-import pytest
-
-from tests.conftest import FIXED_TIME, scalar_result
+from tests.conftest import FIXED_TIME
 
 
 # ---------------------------------------------------------------------------

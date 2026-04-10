@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import AsyncMock, MagicMock
 
 from src.agents.synthesizer import SynthesisAgent
 from src.models.evidence_synthesis import EvidenceSynthesis
-from src.services.synthesis_prompt import SynthesisResult
 
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tests.conftest import FIXED_TIME
 
 
 # ---------------------------------------------------------------------------

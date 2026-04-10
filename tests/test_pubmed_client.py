@@ -4,16 +4,13 @@ HTTP calls are mocked by replacing pubmed_client._client.get with AsyncMock
 so tests are independent of the real NCBI API and of URL-merging quirks.
 """
 
-import xml.etree.ElementTree as ET
 from datetime import date
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 
 from src.services.pubmed_client import (
-    ArticleData,
-    AuthorData,
     PubMedClient,
     RateLimiter,
 )

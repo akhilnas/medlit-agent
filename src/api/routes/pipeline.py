@@ -155,7 +155,7 @@ async def run_full_pipeline(
         embedder_agent=EmbeddingAgent(db),
         synthesis_agent=SynthesisAgent(db),
     )
-    final_state = orch_state = await orch.run(query)
+    final_state = await orch.run(query)
 
     return {
         "phase": final_state.phase,

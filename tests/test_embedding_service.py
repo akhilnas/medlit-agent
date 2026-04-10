@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 from src.services.embedding_service import (
     EmbeddingService,
@@ -157,7 +154,6 @@ async def test_embed_texts_empty_returns_empty():
 async def test_embed_texts_runs_in_executor():
     """embed_texts should call run_in_executor, not block the loop."""
     svc = EmbeddingService()
-    import numpy as np
     mock_model = make_mock_model()
     svc._model = mock_model
     svc._device = "cpu"
@@ -167,7 +163,7 @@ async def test_embed_texts_runs_in_executor():
         mock_loop.run_in_executor = AsyncMock(return_value=[[0.0] * 768])
         mock_loop_fn.return_value = mock_loop
 
-        result = await svc.embed_texts(["test"])
+        await svc.embed_texts(["test"])
 
     mock_loop.run_in_executor.assert_called_once()
 

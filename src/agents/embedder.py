@@ -18,9 +18,8 @@ import uuid
 from datetime import datetime, timezone
 from itertools import islice
 
-from sqlalchemy import select, text, update
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.models.article import Article
 from src.models.article_embedding import ArticleEmbedding

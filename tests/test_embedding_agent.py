@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 from src.agents.embedder import EmbeddingAgent, _batched
 from src.models.article_embedding import ArticleEmbedding
