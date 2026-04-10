@@ -70,7 +70,9 @@ graph TD
 git clone <repo-url> medlit_agent
 cd medlit_agent
 cp .env.example .env
-# Edit .env — set GEMINI_API_KEY and DATABASE_URL
+# Edit .env — at minimum set GEMINI_API_KEY and DATABASE_URL.
+# For production also set API_KEY (protects all /v1/* endpoints)
+# and DASHBOARD_PASSWORD (protects the Streamlit dashboard).
 ```
 
 ### 2. Start the stack
@@ -90,7 +92,7 @@ curl http://localhost:8000/v1/health
 ### 4. Create a clinical query and run the pipeline
 
 ```bash
-# Create a query
+# Create a query (add -H "X-API-Key: <key>" if API_KEY is set)
 curl -X POST http://localhost:8000/v1/queries \
   -H "Content-Type: application/json" \
   -d '{"name": "SGLT2 Heart Failure", "pubmed_query": "SGLT2 inhibitors heart failure", "is_active": true}'
@@ -120,6 +122,18 @@ docker compose -f docker-compose.prod.yml exec app alembic upgrade head
 | Streamlit Dashboard | http://localhost:8501 |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3000 |
+
+## Authentication
+
+All `/v1/*` endpoints and `/metrics` are protected by an API key when `API_KEY` is configured. Pass the key in the `X-API-Key` request header:
+
+```
+X-API-Key: <your-api-key>
+```
+
+When `API_KEY` is unset (default in local dev), authentication is disabled and all requests are accepted.
+
+The Streamlit dashboard is protected by a password login page when `DASHBOARD_PASSWORD` is set. When unset, the dashboard is accessible without authentication.
 
 ## API Overview
 
@@ -156,6 +170,14 @@ docker compose -f docker-compose.prod.yml exec app alembic upgrade head
 | POST | `/v1/queries` | Create a clinical query |
 | PATCH | `/v1/queries/{id}` | Update a clinical query |
 | DELETE | `/v1/queries/{id}` | Delete a clinical query |
+
+## Code Notes
+
+### SQLAlchemy Forward References
+
+Relationship declarations in `src/models/` use string-based type hints (e.g. `Mapped["ClinicalQuery | None"]`) instead of the actual class. Python leaves these strings unevaluated at import time; SQLAlchemy resolves them lazily after all models are loaded. This avoids circular imports between model files that reference each other.
+
+Ruff's F821 rule (undefined name) would otherwise flag these strings as errors, so `pyproject.toml` suppresses F821 for `src/models/*.py`.
 
 ## Development
 
@@ -217,4 +239,17 @@ Workflows:
 
 ## Environment Variables
 
-See [.env.example](.env.example) for all configuration options.
+See [.env.example](.env.example) for all configuration options. Key variables:
+
+| Variable | Required | Description |
+|---|---|---|
+| `GEMINI_API_KEY` | Yes | Google Gemini API key for PICO extraction and synthesis |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `API_KEY` | Production | Shared secret sent as `X-API-Key` header on all `/v1/*` requests. Leave blank to disable auth in local dev. |
+| `DASHBOARD_PASSWORD` | Production | Password for the Streamlit dashboard login page. Leave blank for unauthenticated local dev. |
+| `REDIS_URL` | Yes | Redis connection string |
+| `NCBI_API_KEY` | Optional | Raises PubMed rate limit from 3 req/s to 10 req/s |
+| `SCHEDULER_ENABLED` | Optional | Set `false` in tests to prevent background scheduler from starting (default: `true`) |
+| `SLACK_WEBHOOK_URL` | Optional | Enables Slack notifications on pipeline completion |
+| `SMTP_HOST` | Optional | Enables email notifications on pipeline completion |
+| `MEDLIT_API_URL` | Optional | FastAPI backend URL used by Streamlit (default: `http://localhost:8000`) |
