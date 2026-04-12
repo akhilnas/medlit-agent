@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import text
 
-from src.core.db import AsyncSessionLocal
+from src.core.database import AsyncSessionLocal
 
 
 async def reset(query_id: str) -> None:
