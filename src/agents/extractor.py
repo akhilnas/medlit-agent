@@ -127,7 +127,7 @@ class ExtractionAgent:
                 return "failed"
 
     async def _extract(self, article: Article) -> str:
-        # Validate abstract presence
+        # Validate abstract presence before any DB or LLM work
         try:
             user_prompt = PicoPromptTemplate.render_user(article.title, article.abstract)
         except ValueError as exc:
@@ -181,8 +181,25 @@ class ExtractionAgent:
         return "extracted"
 
     async def _mark_failed(self, article: Article, reason: str) -> None:
-        # A failed flush leaves the session in a rolled-back state; reset it
-        # before attempting a new transaction.
-        await self._db.rollback()
-        article.processing_status = "failed"
-        await self._db.commit()
+        """Mark an article as failed.
+
+        All session mutations are serialized via ``_db_lock`` to prevent
+        concurrent rollback/commit races on the shared AsyncSession.
+        Rollback is wrapped in try/except because it is only needed when
+        a prior commit/flush left the session in a dirty state — callers
+        from the "no abstract" path have not touched the session at all.
+        """
+        async with self._db_lock:
+            try:
+                await self._db.rollback()
+            except Exception:
+                pass
+            article.processing_status = "failed"
+            try:
+                await self._db.commit()
+            except Exception as exc:
+                logger.warning(
+                    "Failed to persist 'failed' status for PMID=%s: %s",
+                    article.pmid,
+                    exc,
+                )
