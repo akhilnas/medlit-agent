@@ -139,6 +139,7 @@ class ExtractionAgent:
         payload, call_usage = await self._llm.complete_json(
             system=PicoPromptTemplate.system(),
             user=user_prompt,
+            max_tokens=4096,
         )
 
         result = PicoPromptTemplate.parse_response(payload)
