@@ -42,9 +42,10 @@ with st.expander("＋  New Query", expanded=False):
         mesh_terms_raw = st.text_input(
             "MeSH Terms (comma-separated)", placeholder="Heart Failure, SGLT2 Inhibitors"
         )
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         min_relevance  = col1.slider("Min Relevance Score", 0.0, 1.0, 0.7, 0.05)
-        schedule_cron  = col2.text_input("Schedule (cron)", value="0 6 * * *")
+        max_results    = col2.number_input("Max Articles to Fetch", min_value=1, max_value=500, value=100, step=10)
+        schedule_cron  = col3.text_input("Schedule (cron)", value="0 6 * * *")
         is_active      = st.checkbox("Active", value=True)
         submitted      = st.form_submit_button("Create Query", type="primary")
 
@@ -60,6 +61,7 @@ with st.expander("＋  New Query", expanded=False):
                     "pubmed_query":      pubmed_query,
                     "mesh_terms":        mesh_terms,
                     "min_relevance_score": min_relevance,
+                    "max_results":       int(max_results),
                     "schedule_cron":     schedule_cron,
                     "is_active":         is_active,
                 })
@@ -108,6 +110,8 @@ else:
                     f'letter-spacing:0.10em;color:var(--text-faint);margin-top:0.2rem;">'
                     f'RELEVANCE ≥ {q.get("min_relevance_score", 0.7)}'
                     f'&nbsp;&nbsp;·&nbsp;&nbsp;'
+                    f'MAX ARTICLES {q.get("max_results", 100)}'
+                    f'&nbsp;&nbsp;·&nbsp;&nbsp;'
                     f'CRON {cron_esc}'
                     f'</div>',
                     unsafe_allow_html=True,
@@ -117,7 +121,7 @@ else:
                 if st.button("Run Pipeline", key=f"run_{qid}", type="primary"):
                     with st.spinner("Running full pipeline…"):
                         try:
-                            result = client.run_full_pipeline(qid)
+                            result = client.run_full_pipeline(qid, max_results=q.get("max_results"))
                             st.success(
                                 f"Pipeline {result.get('phase')}. "
                                 f"Found {result.get('articles_found', 0)}, "

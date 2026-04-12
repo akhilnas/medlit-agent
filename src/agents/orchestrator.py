@@ -78,7 +78,7 @@ class Orchestrator:
         self._embedder = embedder_agent
         self._synthesizer = synthesis_agent
 
-    async def run(self, query: "ClinicalQuery") -> OrchestratorState:
+    async def run(self, query: "ClinicalQuery", max_results: int | None = None) -> OrchestratorState:
         """Execute the full pipeline and return the final state.
 
         Errors in the monitor step abort the pipeline with phase=FAILED.
@@ -94,7 +94,12 @@ class Orchestrator:
         state = state.transition("MONITORING")
         try:
             with pipeline_duration_seconds.labels(phase="monitor", query_id=qid).time():
-                pipeline_run = await self._monitor.run(query, trigger_type="scheduled")
+                effective_max = max_results if max_results is not None else getattr(query, "max_results", 100)
+                pipeline_run = await self._monitor.run(
+                    query,
+                    trigger_type="scheduled",
+                    max_results=effective_max,
+                )
             state = state.transition(
                 "MONITORING", articles_found=pipeline_run.articles_found
             )

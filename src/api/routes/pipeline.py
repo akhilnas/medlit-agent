@@ -127,6 +127,7 @@ async def trigger_synthesis(
 
 class RunRequest(BaseModel):
     query_id: uuid.UUID = Field(..., description="Clinical query to run the full pipeline for")
+    max_results: int | None = Field(None, ge=1, le=500, description="Override the query's max_results for this run")
 
 
 @router.post("/run", status_code=202)
@@ -155,7 +156,7 @@ async def run_full_pipeline(
         embedder_agent=EmbeddingAgent(db),
         synthesis_agent=SynthesisAgent(db),
     )
-    final_state = await orch.run(query)
+    final_state = await orch.run(query, max_results=body.max_results)
 
     return {
         "phase": final_state.phase,

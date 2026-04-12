@@ -116,8 +116,11 @@ class MedlitAPIClient:
             },
         )
 
-    def run_full_pipeline(self, query_id: str) -> dict:
-        return self._post("/v1/pipeline/run", json={"query_id": query_id}, timeout=_PIPELINE_TIMEOUT)
+    def run_full_pipeline(self, query_id: str, max_results: int | None = None) -> dict:
+        payload: dict = {"query_id": query_id}
+        if max_results is not None:
+            payload["max_results"] = max_results
+        return self._post("/v1/pipeline/run", json=payload, timeout=_PIPELINE_TIMEOUT)
 
     def list_pipeline_runs(
         self,

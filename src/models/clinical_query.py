@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Float, String, Text, func
+from sqlalchemy import Boolean, Float, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import TIMESTAMP
@@ -20,6 +20,7 @@ class ClinicalQuery(Base):
     pubmed_query: Mapped[str] = mapped_column(Text, nullable=False)
     mesh_terms: Mapped[dict] = mapped_column(JSONB, server_default="'[]'::jsonb")
     min_relevance_score: Mapped[float] = mapped_column(Float, server_default="0.7")
+    max_results: Mapped[int] = mapped_column(Integer, server_default="100")
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="true")
     schedule_cron: Mapped[str] = mapped_column(String(50), server_default="'0 6 * * 1'")
     created_at: Mapped[datetime] = mapped_column(
