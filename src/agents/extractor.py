@@ -15,7 +15,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.article import Article
@@ -197,22 +197,43 @@ class ExtractionAgent:
         return "extracted"
 
     async def _mark_failed(self, article: Article, reason: str) -> None:
-        """Mark an article as failed.
+        """Mark an article as failed using a direct UPDATE statement.
 
-        Rollback is wrapped in try/except because it is only needed when a
-        prior commit/flush left the session in a dirty state — callers
-        from the "no abstract" path have not touched the session at all.
+        We deliberately avoid mutating the ORM ``article`` object here:
+        in async SQLAlchemy, if a prior rollback expired the object, a
+        plain attribute write triggers an implicit lazy-load outside the
+        greenlet context and raises ``MissingGreenlet``.
+
+        We also avoid calling ``rollback()`` on the happy path. Rollback
+        expires every loaded object in the session, which breaks the next
+        iteration of the sequential extractor loop. Rollback is only
+        needed if the initial UPDATE itself fails because the session is
+        already in a dirty state from a previous flush failure — in that
+        case we rollback once and retry.
         """
+        stmt = (
+            update(Article)
+            .where(Article.id == article.id)
+            .values(processing_status="failed")
+        )
         try:
-            await self._db.rollback()
-        except Exception:
-            pass
-        article.processing_status = "failed"
-        try:
+            await self._db.execute(stmt)
             await self._db.commit()
+            return
         except Exception as exc:
             logger.warning(
-                "Failed to persist 'failed' status for PMID=%s: %s",
+                "Initial failed-status UPDATE errored for PMID=%s (%s) — retrying after rollback",
+                article.pmid,
+                exc,
+            )
+
+        try:
+            await self._db.rollback()
+            await self._db.execute(stmt)
+            await self._db.commit()
+        except Exception as exc:
+            logger.error(
+                "Could not mark PMID=%s as failed after rollback: %s",
                 article.pmid,
                 exc,
             )
