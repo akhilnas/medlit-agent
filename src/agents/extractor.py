@@ -1,16 +1,16 @@
 """Extraction Agent — Phase 2.
 
-Fetches articles with ``processing_status='pending'``, calls Claude to
+Fetches articles with ``processing_status='pending'``, calls Gemini to
 extract PICO data, persists :class:`~src.models.pico_extraction.PicoExtraction`
 records, and updates article status to ``'extracted'`` or ``'failed'``.
 
-Concurrency is controlled via :class:`asyncio.Semaphore` so we don't
-saturate the Anthropic API with simultaneous requests.
+Articles are processed sequentially to avoid sharing a single
+``AsyncSession`` across concurrent coroutines (not coroutine-safe in
+SQLAlchemy async).
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -59,15 +59,20 @@ class ExtractionAgent:
     ) -> None:
         self._db = db
         self._llm = gemini_client or GeminiClient()
-        self._sem = asyncio.Semaphore(concurrency)
-        self._db_lock = asyncio.Lock()
+        # Concurrency param retained for backwards-compat with tests/callers,
+        # but extraction now runs sequentially to avoid AsyncSession races.
+        self._concurrency = concurrency
 
     # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
 
     async def run(self, limit: int | None = None) -> dict:
-        """Process pending articles.
+        """Process pending articles sequentially.
+
+        Sequential processing avoids all AsyncSession sharing races —
+        exactly one coroutine touches the session at a time. LLM calls
+        still benefit from async I/O but run one after another.
 
         Args:
             limit: Maximum number of articles to process in this run.
@@ -79,12 +84,25 @@ class ExtractionAgent:
         articles = await self._fetch_pending(limit)
         logger.info("ExtractionAgent: found %d pending articles", len(articles))
 
-        tasks = [self._process_article(article) for article in articles]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        extracted = failed = skipped = 0
 
-        extracted = sum(1 for r in results if r == "extracted")
-        failed = sum(1 for r in results if r == "failed")
-        skipped = sum(1 for r in results if r == "skipped")
+        for article in articles:
+            try:
+                result = await self._process_article(article)
+            except Exception as exc:
+                logger.exception(
+                    "Unhandled extractor error | pmid=%s error=%s",
+                    article.pmid,
+                    exc,
+                )
+                result = "failed"
+
+            if result == "extracted":
+                extracted += 1
+            elif result == "skipped":
+                skipped += 1
+            else:
+                failed += 1
 
         logger.info(
             "ExtractionAgent done | extracted=%d failed=%d skipped=%d total_tokens=%d",
@@ -113,18 +131,17 @@ class ExtractionAgent:
 
     async def _process_article(self, article: Article) -> str:
         """Extract PICO for one article.  Returns ``'extracted'``, ``'failed'``, or ``'skipped'``."""
-        async with self._sem:
-            try:
-                return await self._extract(article)
-            except Exception as exc:
-                logger.exception(
-                    "Extraction failed | pmid=%s article_id=%s error=%s",
-                    article.pmid,
-                    article.id,
-                    exc,
-                )
-                await self._mark_failed(article, str(exc))
-                return "failed"
+        try:
+            return await self._extract(article)
+        except Exception as exc:
+            logger.exception(
+                "Extraction failed | pmid=%s article_id=%s error=%s",
+                article.pmid,
+                article.id,
+                exc,
+            )
+            await self._mark_failed(article, str(exc))
+            return "failed"
 
     async def _extract(self, article: Article) -> str:
         # Validate abstract presence before any DB or LLM work
@@ -166,10 +183,9 @@ class ExtractionAgent:
             raw_llm_response=payload,
             extracted_at=datetime.now(timezone.utc),
         )
-        async with self._db_lock:
-            self._db.add(pico)
-            article.processing_status = "extracted"
-            await self._db.commit()
+        self._db.add(pico)
+        article.processing_status = "extracted"
+        await self._db.commit()
 
         logger.info(
             "Extracted PICO | pmid=%s design=%s evidence=%s tokens=%d",
@@ -183,23 +199,20 @@ class ExtractionAgent:
     async def _mark_failed(self, article: Article, reason: str) -> None:
         """Mark an article as failed.
 
-        All session mutations are serialized via ``_db_lock`` to prevent
-        concurrent rollback/commit races on the shared AsyncSession.
-        Rollback is wrapped in try/except because it is only needed when
-        a prior commit/flush left the session in a dirty state — callers
+        Rollback is wrapped in try/except because it is only needed when a
+        prior commit/flush left the session in a dirty state — callers
         from the "no abstract" path have not touched the session at all.
         """
-        async with self._db_lock:
-            try:
-                await self._db.rollback()
-            except Exception:
-                pass
-            article.processing_status = "failed"
-            try:
-                await self._db.commit()
-            except Exception as exc:
-                logger.warning(
-                    "Failed to persist 'failed' status for PMID=%s: %s",
-                    article.pmid,
-                    exc,
-                )
+        try:
+            await self._db.rollback()
+        except Exception:
+            pass
+        article.processing_status = "failed"
+        try:
+            await self._db.commit()
+        except Exception as exc:
+            logger.warning(
+                "Failed to persist 'failed' status for PMID=%s: %s",
+                article.pmid,
+                exc,
+            )
