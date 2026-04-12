@@ -39,6 +39,8 @@ EVIDENCE_LEVELS: dict[str, str] = {
 }
 
 _DEFAULT_CONCURRENCY = 5
+
+
 class ExtractionAgent:
     """Run PICO extraction for all pending articles.
 
@@ -58,6 +60,7 @@ class ExtractionAgent:
         self._db = db
         self._llm = gemini_client or GeminiClient()
         self._sem = asyncio.Semaphore(concurrency)
+        self._db_lock = asyncio.Lock()
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -162,10 +165,10 @@ class ExtractionAgent:
             raw_llm_response=payload,
             extracted_at=datetime.now(timezone.utc),
         )
-        self._db.add(pico)
-
-        article.processing_status = "extracted"
-        await self._db.commit()
+        async with self._db_lock:
+            self._db.add(pico)
+            article.processing_status = "extracted"
+            await self._db.commit()
 
         logger.info(
             "Extracted PICO | pmid=%s design=%s evidence=%s tokens=%d",
