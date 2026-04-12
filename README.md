@@ -2,6 +2,10 @@
 
 A multi-agent system that continuously monitors PubMed, extracts structured PICO data using LLMs, generates semantic embeddings, and synthesises evidence summaries for healthcare researchers and clinicians.
 
+## Demo
+
+<video src="docs/app_demo.mp4" controls width="100%"></video>
+
 ## Architecture
 
 ```mermaid
