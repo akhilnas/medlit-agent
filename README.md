@@ -4,7 +4,11 @@ A multi-agent system that continuously monitors PubMed, extracts structured PICO
 
 ## Demo
 
-<video src="docs/app_demo.mp4" controls width="100%"></video>
+
+
+https://github.com/user-attachments/assets/23b61dbd-1ddd-4568-8811-2ece132d345a
+
+
 
 ## Architecture
 
