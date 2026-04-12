@@ -9,6 +9,10 @@ Usage (ECS override):
 
 import asyncio
 import sys
+from pathlib import Path
+
+# Ensure the repo root (/app) is on sys.path when run as a script
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import text
 
